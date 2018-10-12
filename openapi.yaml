@@ -78,6 +78,12 @@ paths:
                 $ref: '#/components/schemas/Error'
 components:
   schemas:
+    Error:
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: Problem..
     Customer:
       properties:
         id:
