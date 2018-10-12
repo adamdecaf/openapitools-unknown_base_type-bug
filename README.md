@@ -1,0 +1,3 @@
+## OpenAPITools UNKNOWN_BASE_TYPE bug
+
+The following ...

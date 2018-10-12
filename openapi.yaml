@@ -1,0 +1,205 @@
+openapi: "3.0.1"
+info:
+  description: test
+  version: "v1"
+  title: "Moov API"
+  contact:
+    email: security@moov.io
+    url: "https://groups.google.com/forum/#!forum/moov-users"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+servers:
+  - url: https://api.moov.io
+    description: Production server
+tags:
+  - name: Customers
+    description: Customer objects are an individual or business used to perform transfer's with an originator and track multiple transactions associated with the customer. The API allows you to create, delete, and update your customers. You can retrieve individual customers as well as a list of all your customers. (Entry Detail)
+
+paths:
+  /v1/ach/customers:
+    get:
+      tags:
+      - Customers
+      summary: Gets a list of Customers
+      operationId: getCustomers
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/cookie'
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/requestID'
+      responses:
+        '200':
+          description: A list of Customer objects
+          headers:
+            X-Total-Count:
+              description: The total number of Customers
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customers'
+    post:
+      tags:
+      - Customers
+      summary: Create a new Customer object
+      operationId: addCustomers
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/Customer'
+      parameters:
+        - $ref: '#/components/parameters/cookie'
+        - $ref: '#/components/parameters/idempotencyKey'
+        - $ref: '#/components/parameters/requestID'
+      responses:
+        '201':
+          description: A JSON object containing a new Customer
+          headers:
+            Location:
+              description: The location of the new resource
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          description: "Invalid Customer Object"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Customer:
+      properties:
+        id:
+          type: string
+          description: Customer ID
+          example: feb492e6
+        email:
+          type: string
+          description: The customers email address
+          format: e-mail
+        defaultDepository:
+          type: string
+          description: The depository account to be used by default per transfer. ID must be a valid Customer Depository account
+          example: 0c5e215c
+        status:
+          type: string
+          description: Defines the status of the Customer
+          enum:
+            - unverified
+            - verified
+            - suspended
+            - deactivated
+        metadata:
+          type: string
+          description: Additional meta data to be used for display only
+          example: Authorized for re-occurring WEB
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+    Customers:
+      type: array
+      items:
+        $ref: '#/components/schemas/Customer'
+  requestBodies:
+    Customer:
+      description: A JSON object containing a new Customer
+      required: true
+      content:
+        application/json:
+          schema:
+            properties:
+              email:
+                type: string
+                description: The customers email address
+                format: e-mail
+              defaultDepository:
+                type: string
+                description: The depository account to be used by default per transfer. ID must be a valid Customer Depository account
+                example: 0c5e215c
+              metadata:
+                type: string
+                description: Additional meta data to be used for display only
+                example: Authorized for re-occurring WEB
+            required:
+              - email
+              - defaultDepository
+  parameters:
+    cookie:
+      name: cookie
+      in: cookie
+      schema:
+        type: string
+      description: moov_auth Cookie
+    bearerToken:
+      in: header
+      name: Authorization
+      description: OAuth2 Bearer token
+      example: Bearer A4CA3074
+      schema:
+        type: string
+    offsetParam:
+      in: query
+      name: offset
+      required: false
+      description: The number of items to skip before starting to collect the result set
+      schema:
+        type: integer
+        minimum: 1
+        default: 0
+    limitParam:
+      in: query
+      name: limit
+      description: The number of items to return
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 100
+        default: 25
+        example: 10
+    idempotencyKey:
+      in: header
+      name: X-Idempotency-Key
+      description: Idempotent key in the header which expires after 24 hours. These strings should contain enough entropy for to not collide with each other in your requests.
+      example: a4f88150
+      required: false
+      schema:
+        type: string
+    requestID:
+      in: header
+      name: X-Request-Id
+      description: Optional Request ID allows application developer to trace requests through the systems logs
+      example: rs4f9915
+      schema:
+        type: string
+  securitySchemes:
+    bearerAuth:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://api.moov.io/v1/oauth2/token
+          # TODO(adam): more fine grained controls..
+          scopes: {}
+    cookieAuth:
+      type: apiKey
+      in: header
+      name: Cookie
+      description: moov_auth Cookie header
+      # We should be able to use 'in: cookie'
+      # https://github.com/OpenAPITools/openapi-generator/issues/208
+      # in: cookie
+      # name: moov_auth
